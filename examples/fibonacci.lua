@@ -5,7 +5,7 @@
 --   luajit examples/fibonacci.lua
 --   lua examples/fibonacci.lua
 
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 -- Recursive Fibonacci (naive, O(2^n))
 local function fib_recursive(n)

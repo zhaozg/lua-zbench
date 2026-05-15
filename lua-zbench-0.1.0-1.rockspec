@@ -45,7 +45,7 @@ dependencies = {
 build = {
     type = "builtin",
     modules = {
-        ["lua-zbench"] = "src/lua-zbench.lua",
+        ["lua-zbench"] = "src/bench.lua",
     },
     copy_directories = {
         "docs",
@@ -79,7 +79,6 @@ build = {
             install = {
                 -- Install the shared library (both .dylib and .so for compatibility)
                 ["zbench.so"] = "zig-out/lib/zbench.so",
-                ["zbench.dylib"] = "zig-out/lib/libzbench.dylib",
             },
         },
         -- Windows

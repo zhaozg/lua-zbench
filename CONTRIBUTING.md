@@ -81,7 +81,7 @@ zig build -Doptimize=ReleaseFast
 -- 用法：
 --   luajit examples/my_benchmark.lua
 
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 bench.describe("My Benchmark Suite", function()
     bench.it("case 1", function()

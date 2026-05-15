@@ -94,7 +94,7 @@ end)
 
 if not ok then
     error("Failed to load native zbench module: " .. tostring(native) .. "\n" ..
-          "Make sure libzbench is installed and accessible via package.cpath.")
+          "Make sure zbench is installed and accessible via package.cpath.")
 end
 
 -- Low-level API: run a single benchmark

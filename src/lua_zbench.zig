@@ -11,6 +11,19 @@ const zbench = @import("zbench");
 
 const Lua = zlua.Lua;
 
+/// Threading model configuration.
+/// Set to .single_threaded for single-threaded execution (default),
+/// or .multi_threaded for multi-threaded benchmark execution.
+/// This is a compile-time option that can be overridden via build configuration.
+pub const ThreadingModel = enum {
+    single_threaded,
+    multi_threaded,
+};
+
+/// Compile-time threading model selection.
+/// Change this to .multi_threaded to enable multi-threaded benchmark execution.
+pub const threading_model: ThreadingModel = .single_threaded;
+
 /// High-resolution time function for Lua.
 /// Returns the current time in seconds as a f64 (nanosecond precision).
 /// Usage in Lua:
@@ -78,7 +91,10 @@ fn luaBenchRun(lua: *Lua) callconv(.c) c_int {
     // First, do a quick probe run to estimate the function's execution time.
     // If single call takes > 10µs, reduce max_iterations to avoid over-batching.
     {
-        var threaded: std.Io.Threaded = .init_single_threaded;
+        var threaded: std.Io.Threaded = switch (threading_model) {
+            .single_threaded => .init_single_threaded,
+            .multi_threaded => .init_multi_threaded,
+        };
         const io = threaded.io();
         const probe_start = std.Io.Timestamp.now(io, .awake).nanoseconds;
         bench_lua = lua;
@@ -114,7 +130,10 @@ fn luaBenchRun(lua: *Lua) callconv(.c) c_int {
 
     // Run the benchmark using iterator API to avoid stdout output
     // and collect results programmatically
-    var threaded: std.Io.Threaded = .init_single_threaded;
+    var threaded: std.Io.Threaded = switch (threading_model) {
+        .single_threaded => .init_single_threaded,
+        .multi_threaded => .init_multi_threaded,
+    };
     const io = threaded.io();
 
     var iter = bench.iterator() catch {
@@ -285,7 +304,10 @@ fn luaBaseline(lua: *Lua) callconv(.c) c_int {
         return 0;
     };
 
-    var threaded: std.Io.Threaded = .init_single_threaded;
+    var threaded: std.Io.Threaded = switch (threading_model) {
+        .single_threaded => .init_single_threaded,
+        .multi_threaded => .init_multi_threaded,
+    };
     const io = threaded.io();
 
     var iter = bench.iterator() catch {
@@ -401,7 +423,10 @@ pub export fn luaopen_zbench(state: ?*zlua.LuaState) callconv(.c) c_int {
 // ============================================================
 
 test "high_res_time returns valid timestamp" {
-    var threaded: std.Io.Threaded = .init_single_threaded;
+    var threaded: std.Io.Threaded = switch (threading_model) {
+        .single_threaded => .init_single_threaded,
+        .multi_threaded => .init_multi_threaded,
+    };
     const io = threaded.io();
     const t1 = std.Io.Timestamp.now(io, .awake).nanoseconds;
     const seconds1 = @as(f64, @floatFromInt(t1)) / 1_000_000_000.0;

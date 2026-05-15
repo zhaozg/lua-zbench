@@ -29,7 +29,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/lua-zbench.git
+git clone https://github.com/zhaozg/lua-zbench.git
 cd lua-zbench
 
 # 构建共享库
@@ -38,8 +38,8 @@ zig build -Doptimize=ReleaseFast
 # 安装到 Lua 路径
 # 将 zig-out/lib/zbench.so 复制到 Lua 的 cpath 目录
 cp zig-out/lib/zbench.so /usr/local/lib/lua/5.1/
-# 或将 src/lua-zbench.lua 复制到 Lua 的 path 目录
-cp src/lua-zbench.lua /usr/local/share/lua/5.1/
+# 或将 src/bench.lua 复制到 Lua 的 path 目录
+cp src/bench.lua /usr/local/share/lua/5.1/
 ```
 
 ### 通过 LuaRocks 安装
@@ -53,7 +53,7 @@ luarocks install lua-zbench
 ### 3 行代码完成基准测试
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 local result = bench.run_single("my_function", function()
     -- 被测代码
     local sum = 0
@@ -66,7 +66,7 @@ print(string.format("Mean: %.2f ns", result.mean_ns))
 ### 声明式 DSL
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 bench.describe("Table Operations", function()
     bench.it("table.insert", function()
@@ -86,7 +86,7 @@ bench.run({ json = true })
 ### 内存追踪
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 bench.describe("String Building", function()
     bench.it("concatenation", function()
@@ -161,7 +161,7 @@ bench.run()
 ```
 lua-zbench/
 ├── src/
-│   ├── lua-zbench.lua      # Lua 胶水代码（声明式 DSL）
+│   ├── bench.lua            # Lua 胶水代码（声明式 DSL）
 │   ├── lua_zbench.zig       # Zig 核心模块（zBench 封装）
 │   └── main.zig             # 共享库入口
 ├── examples/

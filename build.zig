@@ -4,9 +4,10 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Use zlua's built-in LuaJIT compilation support
+    // (ziglua can compile LuaJIT from source, no system LuaJIT needed)
     const zlua_dep = b.dependency("ziglua", .{
         .lang = .luajit,
-        .system_lua = true,
         .additional_system_headers = b.path("deps/luajit-include"),
     });
     const zbench = b.dependency("zbench", .{});
@@ -30,13 +31,14 @@ pub fn build(b: *std.Build) void {
         },
     });
 
-    lib_root_module.linkSystemLibrary("luajit", .{});
-
     // Windows-specific: ensure proper DLL export
     if (target.result.os.tag == .windows) {
-        // Add Windows subsystem and ensure .def file or export directives
         lib_root_module.export_symbol_names = &.{"luaopen_zbench"};
     }
+
+    // Determine the output library name based on the operating system
+    // Lua's package.cpath looks for .so on Unix-like systems and .dll on Windows
+    const lib_name = if (target.result.os.tag == .windows) "zbench.dll" else "zbench.so";
 
     const lib = b.addLibrary(.{
         .linkage = .dynamic,
@@ -44,29 +46,23 @@ pub fn build(b: *std.Build) void {
         .root_module = lib_root_module,
     });
 
-    b.installArtifact(lib);
-
-    // Also install with .so extension for Lua compatibility on macOS
-    // (Lua's package.cpath looks for .so on all platforms)
-    if (target.result.os.tag == .macos) {
-        const install_so = b.addInstallFileWithDir(
-            lib.getEmittedBin(),
-            .{ .custom = "lib" },
-            "zbench.so",
-        );
-        b.getInstallStep().dependOn(&install_so.step);
-    }
+    // Install with the correct extension for the target OS
+    const install_lib = b.addInstallFileWithDir(
+        lib.getEmittedBin(),
+        .{ .custom = "lib" },
+        lib_name,
+    );
+    b.getInstallStep().dependOn(&install_lib.step);
 
     const test_module = b.createModule(.{
         .root_source_file = b.path("src/lua_zbench.zig"),
         .target = target,
         .link_libc = true,
-.imports = &.{
+        .imports = &.{
             .{ .name = "zlua", .module = zlua_dep.module("zlua") },
             .{ .name = "zbench", .module = zbench.module("zbench") },
         },
     });
-    test_module.linkSystemLibrary("luajit", .{});
 
     const mod_tests = b.addTest(.{
         .root_module = test_module,

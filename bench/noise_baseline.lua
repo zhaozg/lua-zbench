@@ -6,7 +6,7 @@
 --   luajit bench/noise_baseline.lua
 --   lua bench/noise_baseline.lua
 
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 print("")
 print("=== Measurement Noise Baseline ===")

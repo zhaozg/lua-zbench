@@ -1,6 +1,6 @@
 # lua-zbench API Reference
 
-**Version:** 0.1.0  
+**Version:** 0.1.0
 **Module:** `lua-zbench` (Lua wrapper) / `zbench` (native Zig module)
 
 ## Table of Contents
@@ -23,7 +23,7 @@
 ## Getting Started
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 -- Simple one-shot benchmark
 local result = bench.run_single("my_function", function()
@@ -235,7 +235,7 @@ When `bench.run({ json = true })` is called, results are written to a JSON file.
 ### Basic Usage
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("zbench")
 
 bench.describe("Table Operations", function()
     bench.it("table.insert", function()
@@ -255,7 +255,7 @@ bench.run({ json = true })
 ### Memory Tracking
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 bench.describe("String Building", function()
     bench.it("concatenation", function()
@@ -276,7 +276,7 @@ bench.run()
 ### Manual Timing
 
 ```lua
-local bench = require("lua-zbench")
+local bench = require("bench")
 
 local start = bench.gettime()
 -- Simulate work
