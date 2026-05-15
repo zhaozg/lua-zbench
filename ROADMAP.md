@@ -11,7 +11,7 @@
 | ------      | ------                | ----------                                         | ---------- |
 | **Phase 1** | 基础绑定与计时验证    | Zig 模块加载、`gettime` 导出、最小 Lua 调用示例    | [x] 完成     |
 | **Phase 2** | 集成 zBench 引擎      | 自适应批处理、预热钩子、基础统计（均值/最小/最大） | [x] 完成      |
-| **Phase 3** | Lua 侧 API 与完整统计 | 声明式测试脚本、百分位数、内存追踪、JSON 输出      | [ ] 进行中      |
+| **Phase 3** | Lua 侧 API 与完整统计 | 声明式测试脚本、百分位数、内存追踪、JSON 输出      | [x] 完成      |
 | **Phase 4** | 跨平台与性能优化      | 多平台 CI、消除 FFI 调用噪音、基线校准             | [ ] 规划      |
 | **Phase 5** | 文档、打包与发布      | LuaRocks 上传、用户指南、贡献文档                  | [ ] 规划      |
 
@@ -71,8 +71,8 @@
 
 - [x] 实现百分位数（p75, p99, p99.9）计算。
 - [x] 内存分配追踪：通过 `zBench` 的 `track_allocations` 获取每次基准的分配次数与总字节数。
-- [ ] 支持 JSON 输出（`results.json`）, 通过 cjson 模块。
-- [ ] 设计 Lua 侧 DSL：
+- [x] 支持 JSON 输出（`results.json`）, 通过纯 Lua JSON 编码。
+- [x] 设计 Lua 侧 DSL：
   ```lua
   local bench = require("lua-zbench")
   bench.describe("RSA 签名", function()
