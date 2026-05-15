@@ -1,0 +1,24 @@
+.{
+    .name = .lua_zbench,
+    .version = "0.1.0",
+    .fingerprint = 0x51fa09f64bfc251b,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .ziglua = .{
+            .url = "https://github.com/natecraddock/ziglua/archive/8f271c82baa5fc43aa02a72f6da020c2025d9436.tar.gz",
+            .hash = "zlua-0.1.0-hGRpC2aABQD4D9PBVH3wAW8k32-I4969MRQ0CpOwoley",
+        },
+        .zbench = .{
+            .url = "https://github.com/hendriknielaender/zBench/archive/refs/tags/v0.13.0.zip",
+            .hash = "zbench-0.13.0-YTdc7xVBAQCCMC-IdLLuotBeiNNNm8k9Pi2V4VYqrwfI"
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "deps",
+        "examples",
+        "docs",
+    },
+}
