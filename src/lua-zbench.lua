@@ -67,12 +67,12 @@ end
 local function format_duration(ns)
     if ns < 1000 then
         return string.format("%.2f ns", ns)
-    elseif ns < 1_000_000 then
+    elseif ns < 1000000 then
         return string.format("%.3f µs", ns / 1000)
-    elseif ns < 1_000_000_000 then
-        return string.format("%.3f ms", ns / 1_000_000)
+    elseif ns < 1000000000 then
+        return string.format("%.3f ms", ns / 1000000)
     else
-        return string.format("%.3f s", ns / 1_000_000_000)
+        return string.format("%.3f s", ns / 1000000000)
     end
 end
 
@@ -88,20 +88,13 @@ local function format_bytes(bytes)
 end
 
 -- Try to load the native zbench module
-local native, load_err = pcall(function()
+local ok, native = pcall(function()
     return require("zbench")
 end)
 
-if not native then
-    -- Fallback: try loading from the same directory
-    local ok, mod = pcall(function()
-        return require("zbench")
-    end)
-    if not ok then
-        error("Failed to load native zbench module: " .. tostring(load_err) .. "\n" ..
-              "Make sure libzbench is installed and accessible via package.cpath.")
-    end
-    native = mod
+if not ok then
+    error("Failed to load native zbench module: " .. tostring(native) .. "\n" ..
+          "Make sure libzbench is installed and accessible via package.cpath.")
 end
 
 -- Low-level API: run a single benchmark
@@ -221,6 +214,20 @@ function M.run(opts)
     end
 
     return results
+end
+
+-- Simple JSON encoder for strings
+local function json_encode(s)
+    if type(s) == "string" then
+        -- Escape special characters
+        s = string.gsub(s, '\\', '\\\\')
+        s = string.gsub(s, '"', '\\"')
+        s = string.gsub(s, '\n', '\\n')
+        s = string.gsub(s, '\r', '\\r')
+        s = string.gsub(s, '\t', '\\t')
+        return '"' .. s .. '"'
+    end
+    return tostring(s)
 end
 
 -- Convert results to JSON string
