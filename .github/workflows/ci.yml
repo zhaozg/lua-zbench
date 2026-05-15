@@ -22,8 +22,6 @@ jobs:
           - { name: windows-latest,  runner: windows-latest }
         zig_version:
           - "0.16.0"
-        luajit_version:
-          - "2.1.0"
 
     runs-on: ${{ matrix.os.runner }}
 
@@ -37,6 +35,21 @@ jobs:
         uses: mlugg/setup-zig@v2
         with:
           version: ${{ matrix.zig_version }}
+
+      # Create Zig cache directories and set TMPDIR to avoid "failed to create temporary zip file" errors
+      - name: Prepare Zig cache (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p .zig-cache/tmp
+          echo "TMPDIR=$PWD/.zig-cache/tmp" >> $GITHUB_ENV
+
+      - name: Prepare Zig cache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ".zig-cache\tmp" | Out-Null
+          $tmpDir = (Resolve-Path ".zig-cache\tmp").Path
+          echo "TMPDIR=$tmpDir" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install LuaJIT (Ubuntu)
         if: runner.os == 'Linux'
@@ -53,16 +66,26 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Download pre-built LuaJIT for Windows
-          $LUAJIT_VERSION = "2.1.0-beta3"
-          $ARCH = "x64"
-          $URL = "https://github.com/openresty/luajit2/releases/download/v${LUAJIT_VERSION}/luajit2-${LUAJIT_VERSION}-win${ARCH}.zip"
-          $ZIP_PATH = "$env:TEMP\luajit.zip"
-          $EXTRACT_PATH = "$env:TEMP\luajit"
-          Invoke-WebRequest -Uri $URL -OutFile $ZIP_PATH
-          Expand-Archive -Path $ZIP_PATH -DestinationPath $EXTRACT_PATH -Force
-          echo "LUAJIT_DIR=$EXTRACT_PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "$EXTRACT_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          # Download pre-built LuaJIT for Windows from MSYS2
+          $ARCHIVE_URL = "https://github.com/msys2/MINGW-packages/releases/download/mingw-w64-luajit"
+          $TEMP_DIR = "$env:RUNNER_TEMP\luajit"
+          New-Item -ItemType Directory -Force -Path $TEMP_DIR | Out-Null
+          $ARCHIVE = "$env:RUNNER_TEMP\luajit.tar.zst"
+          # Try to download from msys2
+          try {
+            # Use curl to download the MSYS2 luajit package
+            curl -sL -o $ARCHIVE "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-luajit-2.1.1774896198-1-any.pkg.tar.zst"
+            tar -xaf $ARCHIVE -C $TEMP_DIR
+            echo "$TEMP_DIR\ucrt64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          } catch {
+            Write-Warning "MSYS2 download failed, trying alternative..."
+            # Alternative: use vcpkg
+            & vcpkg install luajit --triplet x64-windows --quiet
+            $vcpkgDir = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+            if (Test-Path $vcpkgDir) {
+              echo "$vcpkgDir" | Out-File -FilePath $env:GITHUB_PATH -Append
+            }
+          }
 
       - name: Verify LuaJIT
         run: |
