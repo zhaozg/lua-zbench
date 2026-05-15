@@ -111,6 +111,14 @@ function M.gettime()
     return native.gettime()
 end
 
+-- Run an empty baseline benchmark to measure measurement overhead
+-- Returns the noise floor statistics (same format as run_single)
+-- The results can be used to subtract measurement overhead from actual benchmarks
+function M.baseline(opts)
+    opts = opts or {}
+    return native.baseline(opts)
+end
+
 -- Declarative DSL: describe a benchmark suite
 function M.describe(name, fn)
     current_suite = {
@@ -139,6 +147,8 @@ function M.run(opts)
     opts = opts or {}
     local json_output = opts.json or false
     local json_filename = opts.json_file or "results.json"
+    local show_baseline = opts.baseline
+    if show_baseline == nil then show_baseline = true end
     local results = {}
 
     -- Print header
@@ -156,6 +166,24 @@ function M.run(opts)
     print(bold(color("lua-zbench - Microbenchmark Results", "cyan")))
     print(color(string.rep("─", 80), "gray"))
     print("")
+
+    -- Run baseline measurement (noise floor)
+    local baseline_result = nil
+    if show_baseline then
+        print(bold(color("Baseline (Measurement Noise):", "gray")))
+        local ok, bl = pcall(M.baseline, { time_budget_ms = 200 })
+        if ok then
+            baseline_result = bl
+            print(string.format("  Mean: %s", color(format_duration(bl.mean_ns), "gray")))
+            print(string.format("  StdDev: %s", color(format_duration(bl.stddev_ns), "gray")))
+            print(string.format("  Min: %s", color(format_duration(bl.min_ns), "gray")))
+            print(string.format("  Max: %s", color(format_duration(bl.max_ns), "gray")))
+            print("")
+        else
+            print(color("  Failed to measure baseline: " .. tostring(bl), "yellow"))
+            print("")
+        end
+    end
 
     for _, suite in ipairs(suites) do
         print(bold(color("Suite: " .. suite.name, "magenta")))

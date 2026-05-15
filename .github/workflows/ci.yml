@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test (${{ matrix.os.name }}, ${{ matrix.zig_version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - { name: ubuntu-latest,   runner: ubuntu-latest }
+          - { name: macos-latest,    runner: macos-latest }
+          - { name: windows-latest,  runner: windows-latest }
+        zig_version:
+          - "0.16.0"
+          - "0.16.1"
+        luajit_version:
+          - "2.1.0"
+
+    runs-on: ${{ matrix.os.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: ${{ matrix.zig_version }}
+
+      - name: Install LuaJIT (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq luajit libluajit-5.1-dev
+
+      - name: Install LuaJIT (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install luajit
+
+      - name: Install LuaJIT (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Download pre-built LuaJIT for Windows
+          $LUAJIT_VERSION = "2.1.0-beta3"
+          $ARCH = "x64"
+          $URL = "https://github.com/openresty/luajit2/releases/download/v${LUAJIT_VERSION}/luajit2-${LUAJIT_VERSION}-win${ARCH}.zip"
+          $ZIP_PATH = "$env:TEMP\luajit.zip"
+          $EXTRACT_PATH = "$env:TEMP\luajit"
+          Invoke-WebRequest -Uri $URL -OutFile $ZIP_PATH
+          Expand-Archive -Path $ZIP_PATH -DestinationPath $EXTRACT_PATH -Force
+          echo "LUAJIT_DIR=$EXTRACT_PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "$EXTRACT_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Verify LuaJIT
+        run: |
+          luajit -v
+          luajit -e "print('LuaJIT works!')"
+
+      - name: Build shared library
+        run: |
+          zig build -Doptimize=ReleaseSafe
+
+      - name: Run Zig tests
+        run: |
+          zig build test
+
+      - name: Run Lua examples (basic)
+        run: |
+          luajit -e "package.cpath = './zig-out/lib/?.so;./zig-out/lib/?.dylib;' .. (package.cpath or '')" examples/basic.lua
+
+      - name: Run Lua examples (fibonacci)
+        run: |
+          luajit -e "package.cpath = './zig-out/lib/?.so;./zig-out/lib/?.dylib;' .. (package.cpath or '')" examples/fibonacci.lua
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: libzbench-${{ matrix.os.name }}-zig${{ matrix.zig_version }}
+          path: zig-out/lib/
+          retention-days: 7

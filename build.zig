@@ -32,6 +32,12 @@ pub fn build(b: *std.Build) void {
 
     lib_root_module.linkSystemLibrary("luajit", .{});
 
+    // Windows-specific: ensure proper DLL export
+    if (target.result.os.tag == .windows) {
+        // Add Windows subsystem and ensure .def file or export directives
+        lib_root_module.export_symbol_names = &.{"luaopen_zbench"};
+    }
+
     const lib = b.addLibrary(.{
         .linkage = .dynamic,
         .name = "zbench",
@@ -39,6 +45,17 @@ pub fn build(b: *std.Build) void {
     });
 
     b.installArtifact(lib);
+
+    // Also install with .so extension for Lua compatibility on macOS
+    // (Lua's package.cpath looks for .so on all platforms)
+    if (target.result.os.tag == .macos) {
+        const install_so = b.addInstallFileWithDir(
+            lib.getEmittedBin(),
+            .{ .custom = "lib" },
+            "zbench.so",
+        );
+        b.getInstallStep().dependOn(&install_so.step);
+    }
 
     const test_module = b.createModule(.{
         .root_source_file = b.path("src/lua_zbench.zig"),
