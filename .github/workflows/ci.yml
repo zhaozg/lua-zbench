@@ -22,7 +22,6 @@ jobs:
           - { name: windows-latest,  runner: windows-latest }
         zig_version:
           - "0.16.0"
-          - "0.16.1"
         luajit_version:
           - "2.1.0"
 
@@ -35,7 +34,7 @@ jobs:
           submodules: recursive
 
       - name: Setup Zig
-        uses: mlugg/setup-zig@v1
+        uses: mlugg/setup-zig@v2
         with:
           version: ${{ matrix.zig_version }}
 
