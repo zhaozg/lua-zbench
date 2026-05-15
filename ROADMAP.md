@@ -13,7 +13,7 @@
 | **Phase 2** | 集成 zBench 引擎      | 自适应批处理、预热钩子、基础统计（均值/最小/最大） | [x] 完成      |
 | **Phase 3** | Lua 侧 API 与完整统计 | 声明式测试脚本、百分位数、内存追踪、JSON 输出      | [x] 完成      |
 | **Phase 4** | 跨平台与性能优化      | 多平台 CI、消除 FFI 调用噪音、基线校准             | [x] 完成      |
-| **Phase 5** | 文档、打包与发布      | LuaRocks 上传、用户指南、贡献文档                  | [ ] 规划      |
+| **Phase 5** | 文档、打包与发布      | LuaRocks 上传、用户指南、贡献文档                  | [x] 完成      |
 
 ## 依赖项目
 
@@ -118,10 +118,10 @@
 
 **关键任务**：
 
-- [ ] 编写 `README.md`：特性、安装、快速开始、示例。
-- [ ] 编写 `CONTRIBUTING.md`：如何添加新的基准测试、代码规范。
-- [ ] 编写 `CHANGELOG.md`（基于 Keep a Changelog）。
-- [ ] 创建 `lua-zbench-0.1.0-1.rockspec`，配置外部依赖（LuaJIT、openssl 可选）。
+- [x] 编写 `README.md`：特性、安装、快速开始、示例。
+- [x] 编写 `CONTRIBUTING.md`：如何添加新的基准测试、代码规范。
+- [x] 编写 `CHANGELOG.md`（基于 Keep a Changelog）。
+- [x] 创建 `lua-zbench-0.1.0-1.rockspec`，配置外部依赖（LuaJIT、openssl 可选）。
 - [ ] 测试 `luarocks install lua-zbench --local` 在干净环境中的可用性。
 - [ ] 发布到 GitHub Releases 及 LuaRocks 仓库。
 

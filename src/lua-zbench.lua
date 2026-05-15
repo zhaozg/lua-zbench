@@ -318,20 +318,6 @@ function M.to_json(results)
     return table.concat(parts)
 end
 
--- Simple JSON encoder for strings
-local function json_encode(s)
-    if type(s) == "string" then
-        -- Escape special characters
-        s = string.gsub(s, '\\', '\\\\')
-        s = string.gsub(s, '"', '\\"')
-        s = string.gsub(s, '\n', '\\n')
-        s = string.gsub(s, '\r', '\\r')
-        s = string.gsub(s, '\t', '\\t')
-        return '"' .. s .. '"'
-    end
-    return tostring(s)
-end
-
 -- Reset all registered suites (useful for re-running)
 function M.reset()
     suites = {}
