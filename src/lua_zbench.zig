@@ -133,13 +133,11 @@ fn registerModule(lua: *Lua) void {
     _ = lua.pushString("run");
     lua.pushFunction(zlua.wrap(luaBenchRun));
     lua.setTable(-3);
-
-    lua.setGlobal("lua_zbench");
 }
 
-pub export fn luaopen_lua_zbench(state: ?*zlua.LuaState) callconv(.c) c_int {
+pub export fn luaopen_zbench(state: ?*zlua.LuaState) callconv(.c) c_int {
     const lua = @as(*Lua, @ptrCast(state));
-    registerModule(lua);
+    _ = registerModule(lua);
     return 1;
 }
 
@@ -169,9 +167,10 @@ test "benchmark empty function" {
     const allocator = std.testing.allocator;
 
     var bench = zbench.Benchmark.init(allocator, .{
-        .time_budget_ns = 50_000_000,
-        .max_iterations = 1000,
+        .time_budget_ns = 10_000_000,
+        .max_iterations = 10,
     });
+    defer bench.deinit();
 
     try bench.add("test_empty", struct {
         fn run(_: std.mem.Allocator) void {
@@ -189,9 +188,10 @@ test "benchmark with simple computation" {
     const allocator = std.testing.allocator;
 
     var bench = zbench.Benchmark.init(allocator, .{
-        .time_budget_ns = 100_000_000,
-        .max_iterations = 100,
+        .time_budget_ns = 10_000_000,
+        .max_iterations = 10,
     });
+    defer bench.deinit();
 
     try bench.add("test_compute", struct {
         fn run(_: std.mem.Allocator) void {

@@ -1,7 +1,7 @@
 .{
-    .name = .lua_zbench,
+    .name = .zbench,
     .version = "0.1.0",
-    .fingerprint = 0x51fa09f64bfc251b,
+    .fingerprint = 0xbb819b3cdb58b1bc,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .ziglua = .{

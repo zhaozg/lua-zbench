@@ -1,6 +1,6 @@
 //! lua-zbench shared library entry point.
-//! This file defines the Lua C API entry point `luaopen_lua_zbench`
-//! that Lua calls when loading the module via `require("lua_zbench")`.
+//! This file defines the Lua C API entry point `luaopen_zbench`
+//! that Lua calls when loading the module via `require("zbench")`.
 
 const std = @import("std");
 const lua_zbench = @import("lua_zbench");

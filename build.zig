@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const zlua_dep = b.dependency("ziglua", .{});
     const zbench = b.dependency("zbench", .{});
 
-    const lua_zbench_mod = b.addModule("lua_zbench", .{
+    const zbench_mod = b.addModule("zbench", .{
         .root_source_file = b.path("src/lua_zbench.zig"),
         .target = target,
         .imports = &.{
@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
         .imports = &.{
-            .{ .name = "lua_zbench", .module = lua_zbench_mod },
+            .{ .name = "zbench", .module = zbench_mod },
         },
     });
 
@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addLibrary(.{
         .linkage = .dynamic,
-        .name = "lua_zbench",
+        .name = "zbench",
         .root_module = lib_root_module,
     });
 
@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/lua_zbench.zig"),
         .target = target,
         .link_libc = true,
-        .imports = &.{
+.imports = &.{
             .{ .name = "zlua", .module = zlua_dep.module("zlua") },
             .{ .name = "zbench", .module = zbench.module("zbench") },
         },
