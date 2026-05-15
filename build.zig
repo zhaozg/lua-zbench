@@ -4,7 +4,11 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const zlua_dep = b.dependency("ziglua", .{});
+    const zlua_dep = b.dependency("ziglua", .{
+        .lang = .luajit,
+        .system_lua = true,
+        .additional_system_headers = b.path("deps/luajit-include"),
+    });
     const zbench = b.dependency("zbench", .{});
 
     const zbench_mod = b.addModule("zbench", .{

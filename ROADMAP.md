@@ -9,9 +9,9 @@
 
 | 阶段        | 目标                  | 关键产出                                           | 完成状态       |
 | ------      | ------                | ----------                                         | ---------- |
-| **Phase 1** | 基础绑定与计时验证    | Zig 模块加载、`gettime` 导出、最小 Lua 调用示例    | [ ] 规划     |
-| **Phase 2** | 集成 zBench 引擎      | 自适应批处理、预热钩子、基础统计（均值/最小/最大） | [ ] 规划      |
-| **Phase 3** | Lua 侧 API 与完整统计 | 声明式测试脚本、百分位数、内存追踪、JSON 输出      | [ ] 规划      |
+| **Phase 1** | 基础绑定与计时验证    | Zig 模块加载、`gettime` 导出、最小 Lua 调用示例    | [x] 完成     |
+| **Phase 2** | 集成 zBench 引擎      | 自适应批处理、预热钩子、基础统计（均值/最小/最大） | [x] 完成      |
+| **Phase 3** | Lua 侧 API 与完整统计 | 声明式测试脚本、百分位数、内存追踪、JSON 输出      | [ ] 进行中      |
 | **Phase 4** | 跨平台与性能优化      | 多平台 CI、消除 FFI 调用噪音、基线校准             | [ ] 规划      |
 | **Phase 5** | 文档、打包与发布      | LuaRocks 上传、用户指南、贡献文档                  | [ ] 规划      |
 
@@ -28,11 +28,11 @@
 
 **关键任务**：
 
-- [ ] 初始化 Zig 项目，添加 `ziglua` 与 `zig-luajit-build` 依赖。
-- [ ] 实现 `lua_high_res_time` 函数，返回 `std.time.nanoTimestamp()` 转换的秒级浮点数。
-- [ ] 编写 `build.zig`，生成共享库（`.so`/`.dylib`/`.dll`）。
-- [ ] 编写最小 Lua 测试脚本：加载模块并打印时间戳。
-- [ ] 验证计时精度：对比循环 1e6 次空操作的理论耗时与测量结果（误差 ≤ 2%）。
+- [x] 初始化 Zig 项目，添加 `ziglua` 与 `zbench` 依赖。
+- [x] 实现 `lua_high_res_time` 函数，返回高精度秒级浮点数。
+- [x] 编写 `build.zig`，生成共享库（`.so`/`.dylib`/`.dll`）。
+- [x] 编写最小 Lua 测试脚本：加载模块并打印时间戳。
+- [x] 验证计时精度：对比循环 1e6 次空操作的理论耗时与测量结果（误差 ≤ 2%）。
 
 **交付物**：
 
@@ -48,12 +48,12 @@
 
 **关键任务**：
 
-- [ ] 将 `zBench` 作为 Zig 依赖引入。
-- [ ] 封装 `zBench.Benchmark`：将 Lua 函数包装为 `BenchFunc`。
-- [ ] 实现生命周期钩子：`before_all` 中创建 `lua_State` 并加载被测函数；`before_each` 中重置栈。
-- [ ] 实现预热阶段：调用被测函数 `WARMUP_ITER` 次（默认 1000）。
-- [ ] 导出 `lua_bench_run(name, func_ref, opts)` 函数。
-- [ ] 基础统计：返回均值、最小值、最大值、样本数。
+- [x] 将 `zBench` 作为 Zig 依赖引入。
+- [x] 封装 `zBench.Benchmark`：将 Lua 函数包装为 `BenchFunc`。
+- [x] 实现生命周期钩子：`before_all` 中创建 `lua_State` 并加载被测函数；`before_each` 中重置栈。
+- [x] 实现预热阶段：调用被测函数 `WARMUP_ITER` 次（默认 1000）。
+- [x] 导出 `lua_bench_run(name, func_ref, opts)` 函数。
+- [x] 基础统计：返回均值、最小值、最大值、样本数、百分位数。
 
 **交付物**：
 
@@ -69,8 +69,8 @@
 
 **关键任务**：
 
-- [ ] 实现百分位数（p50, p75, p90, p99, p99.9）计算。
-- [ ] 内存分配追踪：通过 `zBench` 的 `track_allocations` 获取每次基准的分配次数与总字节数。
+- [x] 实现百分位数（p75, p99, p99.9）计算。
+- [x] 内存分配追踪：通过 `zBench` 的 `track_allocations` 获取每次基准的分配次数与总字节数。
 - [ ] 支持 JSON 输出（`results.json`）, 通过 cjson 模块。
 - [ ] 设计 Lua 侧 DSL：
   ```lua
@@ -82,7 +82,7 @@
   end)
   bench.run()
   ```
-- [ ] 添加 `opts` 参数：`time_budget_ms`, `track_memory`, `warmup_iter` 等。
+- [x] 添加 `opts` 参数：`time_budget_ms`, `track_memory`, `warmup_iter` 等。
 
 **交付物**：
 

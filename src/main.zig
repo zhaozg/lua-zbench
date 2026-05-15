@@ -3,7 +3,10 @@
 //! that Lua calls when loading the module via `require("zbench")`.
 
 const std = @import("std");
-const lua_zbench = @import("lua_zbench");
+const lua_zbench = @import("zbench");
 
-// The luaopen function is exported from lua_zbench.zig
-// This file exists as the root source for the shared library build.
+// luaopen_zbench is exported from lua_zbench.zig
+// We just need to reference the module to ensure it's linked
+comptime {
+    _ = lua_zbench.luaopen_zbench;
+}

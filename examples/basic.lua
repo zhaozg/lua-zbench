@@ -36,3 +36,23 @@ print(string.format("Loop %d iterations:", iterations))
 print(string.format("  Total: %.6f seconds", elapsed))
 print(string.format("  Per iteration: %.3f ns", per_iter_ns))
 print(string.format("  Dummy: %d", dummy))
+
+-- Phase 2: Use the benchmark runner
+print("\n--- Benchmark Runner ---")
+
+-- Benchmark a simple computation
+local result = zbench.run("sum_100", function()
+    local s = 0
+    for i = 1, 100 do s = s + i end
+end, {time_budget_ms=500, max_iterations=100})
+
+print(string.format("Benchmark: %s", result.name))
+print(string.format("  Iterations: %d", result.iterations))
+print(string.format("  Mean: %.2f ns", result.mean_ns))
+print(string.format("  Min: %.0f ns", result.min_ns))
+print(string.format("  Max: %.0f ns", result.max_ns))
+print(string.format("  StdDev: %.2f ns", result.stddev_ns))
+print(string.format("  p75: %.0f ns", result.p75_ns))
+print(string.format("  p99: %.0f ns", result.p99_ns))
+print(string.format("  p99.9: %.0f ns", result.p99_9_ns))
+print(string.format("  Total: %.2f ns", result.total_ns))

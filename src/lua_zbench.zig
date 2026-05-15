@@ -16,10 +16,11 @@ const Lua = zlua.Lua;
 /// Usage in Lua:
 ///   local time = lua_zbench.gettime()
 fn luaHighResTime(lua: *Lua) callconv(.c) c_int {
-    var threaded: std.Io.Threaded = .init_single_threaded;
-    const io = threaded.io();
-    const timestamp_ns = std.Io.Timestamp.now(io, .awake).nanoseconds;
-    const seconds = @as(f64, @floatFromInt(timestamp_ns)) / 1_000_000_000.0;
+    // Use POSIX clock_gettime for reliable high-resolution timing
+    var ts: std.c.timespec = undefined;
+    _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
+    const seconds = @as(f64, @floatFromInt(ts.sec)) +
+        @as(f64, @floatFromInt(ts.nsec)) / 1_000_000_000.0;
     lua.pushNumber(seconds);
     return 1;
 }
@@ -37,6 +38,8 @@ fn benchFuncWrapper(_: std.mem.Allocator) void {
 /// Run a benchmark from Lua.
 /// Usage in Lua:
 ///   local results = lua_zbench.run(name, func, opts)
+/// Returns a table with: name, iterations, mean_ns, min_ns, max_ns,
+///   stddev_ns, p75_ns, p99_ns, p99_9_ns, total_ns
 fn luaBenchRun(lua: *Lua) callconv(.c) c_int {
     const name = lua.checkString(1);
     if (!lua.isFunction(2)) {
@@ -86,29 +89,133 @@ fn luaBenchRun(lua: *Lua) callconv(.c) c_int {
         return 0;
     };
 
-    // Run the benchmark
+    // Run the benchmark using iterator API to avoid stdout output
+    // and collect results programmatically
     var threaded: std.Io.Threaded = .init_single_threaded;
     const io = threaded.io();
-    const file = std.Io.File.stdout();
 
-    bench.run(io, file) catch {
+    var iter = bench.iterator() catch {
         bench_lua = null;
         bench_ref = 0;
         lua.unref(zlua.registry_index, func_ref);
-        _ = lua.pushString("benchmark failed");
+        bench.deinit();
+        _ = lua.pushString("failed to create iterator");
         return 0;
     };
+
+    var result: ?zbench.Result = null;
+    while (iter.next(io) catch {
+        bench_lua = null;
+        bench_ref = 0;
+        lua.unref(zlua.registry_index, func_ref);
+        bench.deinit();
+        _ = lua.pushString("benchmark iteration failed");
+        return 0;
+    }) |step| {
+        switch (step) {
+            .progress => {},
+            .result => |r| {
+                result = r;
+            },
+        }
+    }
 
     bench_lua = null;
     bench_ref = 0;
     lua.unref(zlua.registry_index, func_ref);
 
-    // Return a results table
+    const bench_result = result orelse {
+        bench.deinit();
+        _ = lua.pushString("no benchmark result");
+        return 0;
+    };
+
+    // Calculate statistics from the readings
+    const timings_ns = bench_result.readings.timings_ns;
+    const stats = zbench.statistics.Statistics(u64).init(timings_ns) catch {
+        bench_result.deinit();
+        bench.deinit();
+        _ = lua.pushString("failed to compute statistics");
+        return 0;
+    };
+
+    // Build results table for Lua
     lua.newTable();
 
+    // name
     _ = lua.pushString("name");
-    _ = lua.pushString(name);
+    _ = lua.pushString(bench_result.name);
     lua.setTable(-3);
+
+    // iterations
+    _ = lua.pushString("iterations");
+    lua.pushNumber(@as(f64, @floatFromInt(bench_result.readings.iterations)));
+    lua.setTable(-3);
+
+    // total_ns
+    _ = lua.pushString("total_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.total)));
+    lua.setTable(-3);
+
+    // mean_ns
+    _ = lua.pushString("mean_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.mean)));
+    lua.setTable(-3);
+
+    // stddev_ns
+    _ = lua.pushString("stddev_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.stddev)));
+    lua.setTable(-3);
+
+    // min_ns
+    _ = lua.pushString("min_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.min)));
+    lua.setTable(-3);
+
+    // max_ns
+    _ = lua.pushString("max_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.max)));
+    lua.setTable(-3);
+
+    // p75_ns
+    _ = lua.pushString("p75_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.percentiles.p75)));
+    lua.setTable(-3);
+
+    // p99_ns
+    _ = lua.pushString("p99_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.percentiles.p99)));
+    lua.setTable(-3);
+
+    // p99_9_ns (zBench provides p995, we use it as p99.9 approximation)
+    _ = lua.pushString("p99_9_ns");
+    lua.pushNumber(@as(f64, @floatFromInt(stats.percentiles.p995)));
+    lua.setTable(-3);
+
+    // Memory tracking results (if enabled)
+    if (bench_result.readings.allocations) |allocs| {
+        const mem_stats = zbench.statistics.Statistics(usize).init(allocs.maxes) catch {
+            bench_result.deinit();
+            bench.deinit();
+            _ = lua.pushString("failed to compute memory statistics");
+            return 0;
+        };
+
+        _ = lua.pushString("alloc_max_bytes");
+        lua.pushNumber(@as(f64, @floatFromInt(mem_stats.max)));
+        lua.setTable(-3);
+
+        _ = lua.pushString("alloc_mean_bytes");
+        lua.pushNumber(@as(f64, @floatFromInt(mem_stats.mean)));
+        lua.setTable(-3);
+
+        _ = lua.pushString("alloc_count");
+        lua.pushNumber(@as(f64, @floatFromInt(allocs.counts[0])));
+        lua.setTable(-3);
+    }
+
+    bench_result.deinit();
+    bench.deinit();
 
     return 1;
 }
@@ -136,8 +243,8 @@ fn registerModule(lua: *Lua) void {
 }
 
 pub export fn luaopen_zbench(state: ?*zlua.LuaState) callconv(.c) c_int {
-    const lua = @as(*Lua, @ptrCast(state));
-    _ = registerModule(lua);
+    const lua = @as(*Lua, @ptrCast(state.?));
+    registerModule(lua);
     return 1;
 }
 
