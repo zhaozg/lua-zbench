@@ -180,8 +180,21 @@ test "benchmark empty function" {
 
     var threaded: std.Io.Threaded = .init_single_threaded;
     const io = threaded.io();
-    const file = std.Io.File.stdout();
-    try bench.run(io, file);
+    // Use iterator API to avoid outputting benchmark table to stdout
+    // (stdout is used by test runner protocol in --listen mode)
+    var iter = try bench.iterator();
+    var result_count: usize = 0;
+    while (try iter.next(io)) |step| {
+        switch (step) {
+            .progress => {},
+            .result => |r| {
+                result_count += 1;
+                try std.testing.expectEqualStrings("test_empty", r.name);
+                r.deinit();
+            },
+        }
+    }
+    try std.testing.expectEqual(@as(usize, 1), result_count);
 }
 
 test "benchmark with simple computation" {
@@ -205,6 +218,18 @@ test "benchmark with simple computation" {
 
     var threaded: std.Io.Threaded = .init_single_threaded;
     const io = threaded.io();
-    const file = std.Io.File.stdout();
-    try bench.run(io, file);
+    // Use iterator API to avoid outputting benchmark table to stdout
+    var iter = try bench.iterator();
+    var result_count: usize = 0;
+    while (try iter.next(io)) |step| {
+        switch (step) {
+            .progress => {},
+            .result => |r| {
+                result_count += 1;
+                try std.testing.expectEqualStrings("test_compute", r.name);
+                r.deinit();
+            },
+        }
+    }
+    try std.testing.expectEqual(@as(usize, 1), result_count);
 }
